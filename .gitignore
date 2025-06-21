@@ -1,0 +1,7 @@
+*.pth
+*.pt
+*.onnx
+*.pkl
+*.pickle
+*.pyc
+*.gz
