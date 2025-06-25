@@ -1,0 +1,77 @@
+# TML Assignment 2
+
+## Model Stealing
+
+For this assignment, we were tasked with stealing a model of unkown architecture hidden behind an API,
+which was also protected using B4B.
+
+
+## Data Accessible to the Adversary  
+- Trained encoder of unknown architecture hidden behind an API and protected using B4B  
+- Subset of encoder's training data
+ 
+
+## Approach Used  
+
+We tried to use Data Augmentations & Siamese Framework as mentioned in the lecture and combined it with active leaning to minimize the number of queries to the api and hence 
+the impact of B4B. In the first round we sample 1000 random images from the dataset and send them to the api. We train then our encoder to minimize the distance between its 
+embeddings and the output of the api. The trained model is then used to estimate the model uncertanty for each point using MC-Dropout. we then sample the next 1000 datapoints
+according to both uncertanty and the original class distribution to not activate B4B.
+
+
+### which basemodel?  
+We tried different model types and found that Resnet18 resulted in the smallest average loss. 
+Resnet50 had a L2 distance of ~37.
+
+
+### How was the model trained ?
+The model is trained on the new 1000 emebddings but every 5 rounds on all data to prevent forget.
+
+
+### Which loss functions where used?
+We combined two different loss functions. At start of each training we only consider MSE and a downweighted contrarive loss but then slowly introduce cosnine embeddingsloss as well.
+Using a constrastive loss functions as well lead to a worse perfomance.
+
+### Which Augmentations where used?  
+We ended up only using small augmentations like flip and rotate as stronger ones activated B4B too quickly.
+
+### Why only train the models for X epochs?  
+We observed that the model perfomance hardly changed after 15~20 epochs so we stopped here to prevent overfitting.
+When training on the full dataset we use 50 epochs.
+
+
+
+## Results  
+The above approach results in a L2 distance of 4.81. 
+Our solution ranked 4th on the leaderboard.
+
+## Observations  
+The cosine similarity of two unrelated sets on a fresh encoder was 0.975 which seems very high.
+
+## Other Ideas and Implementation Details  
+
+
+## Files and Their Descriptions  
+
+
+
+## Dependencies
+
+The following Python packages and modules are required to run the scripts:
+
+- argparse
+- numpy
+- pandas
+- requests
+- matplotlib
+- seaborn
+- tqdm
+- torch
+- torchvision
+- scikit-learn
+- scipy
+
+### Custom modules
+- src.utils_v1
+- src.utils_v3
+- src.data_sets (including `MembershipDataset`, `return_private_data_loader`, and `return_public_data_loader`)

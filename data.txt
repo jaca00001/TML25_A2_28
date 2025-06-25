@@ -1,1 +1,0 @@
-{"detail": "Exceeded API launches. Only 4/h allowed."}
