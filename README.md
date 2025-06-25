@@ -2,7 +2,7 @@
 
 ## Model Stealing
 
-For this assignment, we were tasked with stealing a model of unkown architecture hidden behind an API,
+For this assignment, we were tasked with stealing a model of unknown architecture hidden behind an API,
 which was also protected using B4B.
 
 
@@ -13,13 +13,10 @@ which was also protected using B4B.
 
 ## Approach Used  
 
-We tried to use Data Augmentations & Siamese Framework as mentioned in the lecture and combined it with active leaning to minimize the number of queries to the api and hence 
-the impact of B4B. In the first round we sample 1000 random images from the dataset and send them to the api. We train then our encoder to minimize the distance between its 
-embeddings and the output of the api. The trained model is then used to estimate the model uncertanty for each point using MC-Dropout. we then sample the next 1000 datapoints
-according to both uncertanty and the original class distribution to not activate B4B.
+We  used Data Augmentations and a Siamese Framework as mentioned in the lecture and combined it with an active learning approach to minimize the number of queries to the api and hence the impact of B4B. In the first round we sample 1000 random images from the dataset and send them to the api. We train then our encoder to minimize the distance between its embeddings and the output of the api. The trained model is then used to estimate the model uncertainty for each point using MC-Dropout. The next 1000 datapoints are then sampled based on the model uncertainty and the class distribution. This process is then repeated until the max queries are reached or the complete dataset is labeled.
 
 ## Other Ideas and Implementation Details  
-For 13000 images we took original image representation twice considering there might be some changes because of B4B defense. Also three representations of the same image using three types of augmentation such as horizontal flip, 15degree rotation,color jitter. As a result for each image we had 5 representations and then we trained our encoder in the following way:
+For 13000 images we took original image representation twice considering there might be some changes because of B4B defense. Also three representations of the same image using three types of augmentation such as horizontal flip, 15 degree rotation, color jitter. As a result for each image we had 5 representations and then we trained our encoder in the following way:
 
 X -> Encoder(X) ->2048->Projector-> output of 1024 dimension
 
@@ -38,19 +35,19 @@ Resnet50 for example had a L2 distance of ~36.
 
 ### How was the model trained ?
 We train one model on the entire dataset.
-The model is trained on the new 1000 emebddings and every 5 rounds on all data to prevent forget.
+The model is trained on the new 1000 embeddings and every 5 rounds on all data to prevent forget.
 
 ### Which loss functions were used?
 We combined two different loss functions.
-At start of each training we only consider MSE but then slowly introduce cosine embeddings loss as well.
-Using a constrastive loss functions as well lead to a worse perfomance and sometimes and increasing loss over the epochs.
+At start of each training we only consider MSE but then slowly introduce cosine embedding loss as well.
+Using a contrastive loss function as well led to a worse performance and sometimes an increasing loss over the epochs.
 
-### Which Augmentations where used?  
+### Which Augmentations were used?  
 We experimented with multiple augmentations of different strengths, i. e., cropping, removing parts of the image, etc...
 We ended up only using small augmentations like flip and rotate as stronger ones activated B4B too quickly and resulted in a larger L2 distance.
 
 ### Why only train the models for X epochs?  
-We observed that the model perfomance hardly changed after ~15-20 epochs during trainin so we stopped here to prevent overfitting.
+We observed that the model performance hardly changed after ~15-20 epochs during training so we stopped here to prevent overfitting.
 When training on the full dataset we use 50 epochs.
 
 ## Results  
@@ -59,52 +56,44 @@ Our solution ranked 4th on the leaderboard.
 
 ## Observations  
 The cosine similarity of two unrelated sets on a fresh encoder was 0.975 which seems very high.
-
+Often a model, which was not trained on the full data,  outperformed the ones trained longer, which highlights the effect of B4B.
 
 ## Files and Their Descriptions  
 
-attack.py - Main code for the model stealing
+attack.py - Main code for the model stealing  
             attack: runs the attack for n rounds, each round sending 1000 new images to the api. Returns the stolen model at the end
-
 
 api.py - Handles all the code which interacts with the api.  
         new_api: Requests a new api/model. Returns TOKEN and SEED.   
         model_stealing: Sends 1000 images to the api. Returns the embeddings.  
-        upload: Uploads the current stolen model for evaluation. Returns L2 distance to orignial model.   
-        embeddings_sim: Meassures the cosine similarity between 2 different subsets. Returns the average cosine similarity.  
+        upload: Uploads the current stolen model for evaluation. Returns L2 distance to original model.   
+        embeddings_sim: Measures the cosine similarity between 2 different subsets. Returns the average cosine similarity.  
 
+utils.py - This file includes different functions required to steal the model.  
+           augment_image and augment_image_single: Augment batch of images and a single image according to AUGMENT and AUGMENT_SINGLE. Return the augmented version.  
+           bayesian_predictions: Uses MC-Dropout to compute the uncertainty for each datapoint. Returns the mean std over the embedding.  
+           predict_next: Uses bayesian_predictions and the class distribution to generate new candidates. Returns the next 1000 images to be sent to the api.  
+           train: trains the model's output to be close to the real encoder's outputs. Returns the trained model.  
 
-utils.py - This file includes different functions required to steal the model. 
-           augment_image and augment_image_single: Augment batch of images and a single image according to AUGMENT and AUGMENT_SINGLE. Return the augmented version.
-           bayesian_predictions: Uses Mc-Droput to compute the uncertatny for each Datapoint. Returns the mean std over the embedding. 
-           predict_next: Uses bayesian_predictions and the classdistirbution to generate new candidates. Returns the next 1000 images to be send to the api. 
-           train: trains the models output to be close to the real encoders outputs. Returns the trained model. 
+model.py - The predicted model architecture is stored here.  
 
-
-model.py - The predicted model architecture is stored here. 
-
-
-data_sets.py - In here, the  Dataset classes are stored, one for the original data and one for the stolen embeddings together with the predicted embeddings. 
-
-
+data_sets.py - In here, the  Dataset classes are stored, one for the original data and one for the stolen embeddings together with the predicted embeddings.  
 
 ## Dependencies
 
 The following Python packages and modules are required to run the scripts:
 
-
-- torch
-- torchvision
-- requests
-- onnxruntime
-- tqdm
-- kornia
-- timm
+- torch  
+- torchvision  
+- requests  
+- onnxruntime  
+- tqdm  
+- kornia  
+- timm  
 - scikit-learn
 
-
 ### Custom modules
-- src.utils 
-- src.dataset 
-- src.model 
-- src.api 
+- src.utils  
+- src.dataset  
+- src.model  
+- src.api  

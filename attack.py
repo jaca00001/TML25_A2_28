@@ -18,9 +18,6 @@ transform = transforms.Compose([
 
 ])
 
-
-
-
 def attack(dataset, rounds, device='cuda'):
    
     selected_indices = np.array([])
