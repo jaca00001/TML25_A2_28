@@ -13,7 +13,7 @@ which was also protected using B4B.
 
 ## Approach Used  
 
-We  used Data Augmentations and a Siamese Framework as mentioned in the lecture and combined it with an active learning approach to minimize the number of queries to the api and hence the impact of B4B. In the first round we sample 1000 random images from the dataset and send them to the api. We train then our encoder to minimize the distance between its embeddings and the output of the api. The trained model is then used to estimate the model uncertainty for each point using MC-Dropout. The next 1000 datapoints are then sampled based on the model uncertainty and the class distribution. This process is then repeated until the max queries are reached or the complete dataset is labeled.
+We used Data Augmentations and a Siamese Framework as mentioned in the lecture and combined it with an active learning approach to minimize the number of queries to the api and hence the impact of B4B. In the first round we sample 1000 random images from the dataset and send them to the api. Our encoder is now trained to minimize the distance between its embeddings and the output of the api. The trained model is then used to estimate the uncertainty for each datapoint using MC-Dropout. The next 1000 datapoints are then sampled based on the model uncertainty and the class distribution. This process is repeated until the max queries are reached or the complete dataset is labeled.
 
 ## Other Ideas and Implementation Details  
 For 13000 images we took original image representation twice considering there might be some changes because of B4B defense. Also three representations of the same image using three types of augmentation such as horizontal flip, 15 degree rotation, color jitter. As a result for each image we had 5 representations and then we trained our encoder in the following way:
@@ -35,16 +35,16 @@ Resnet50 for example had a L2 distance of ~36.
 
 ### How was the model trained ?
 We train one model on the entire dataset.
-The model is trained on the new 1000 embeddings and every 5 rounds on all data to prevent forget.
+The model is trained on the new 1000 embeddings and every 5 rounds on all labeled data to prevent "forget".
 
 ### Which loss functions were used?
 We combined two different loss functions.
-At start of each training we only consider MSE but then slowly introduce cosine embedding loss as well.
+At start of each training round we only consider MSE but then slowly introduce cosine embedding loss as well.
 Using a contrastive loss function as well led to a worse performance and sometimes an increasing loss over the epochs.
 
 ### Which Augmentations were used?  
 We experimented with multiple augmentations of different strengths, i. e., cropping, removing parts of the image, etc...
-We ended up only using small augmentations like flip and rotate as stronger ones activated B4B too quickly and resulted in a larger L2 distance.
+In end we only used small augmentations like flip and rotate as stronger ones activated B4B too quickly and resulted in a larger L2 distance.
 
 ### Why only train the models for X epochs?  
 We observed that the model performance hardly changed after ~15-20 epochs during training so we stopped here to prevent overfitting.
@@ -56,7 +56,7 @@ Our solution ranked 4th on the leaderboard.
 
 ## Observations  
 The cosine similarity of two unrelated sets on a fresh encoder was 0.975 which seems very high.
-Often a model, which was not trained on the full data,  outperformed the ones trained longer, which highlights the effect of B4B.
+Often a model, which was not trained on the full data, outperformed the ones trained longer, which highlights the effect of B4B.
 
 ## Files and Their Descriptions  
 
