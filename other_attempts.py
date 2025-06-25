@@ -150,7 +150,7 @@ def train():
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for image, target_features in validation_loader:  # <-- updated here
+            for image, target_features in validation_loader:  
                 image = image.to(device)
                 feature1, feature2, feature3, feature4, feature5 = target_features
                 feature1 = feature1.to(device)

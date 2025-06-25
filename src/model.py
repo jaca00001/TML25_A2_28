@@ -29,9 +29,9 @@ class SmallResNet18(nn.Module):
         # Load a pretrained version for improved performance
         self.backbone = models.resnet18(weights="IMAGENET1K_V1" if pretrained else None)
 
-        # Changed to work on smaller image sizes as well, might reduce dimesions too quicly otherwise
-        # self.backbone.conv1 = nn.Conv2d(3, 64, kernel_size=3)
-        # self.backbone.maxpool = nn.Identity()
+        # Changed to work on smaller image sizes as well, reduces dimesions too quickly otherwise for input size 32x32
+        self.backbone.conv1 = nn.Conv2d(3, 64, kernel_size=3)
+        self.backbone.maxpool = nn.Identity()
 
         # Take everything except last layer
         self.feature_extractor = nn.Sequential(*list(self.backbone.children())[:-1])

@@ -1,22 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import Dataset,DataLoader, Subset
+from torch.utils.data import DataLoader
 from torchvision import transforms
-import torchvision.models as models
-import requests
-import onnxruntime as ort
-import json
-import io
-import sys
-import base64
-from typing import Tuple
 import pickle
-from tqdm import tqdm
-import time
-import kornia.augmentation as K
 
 
 
@@ -25,7 +10,7 @@ from src.dataset import *
 from src.model import * 
 from src.api import *
 
-# data transform was given
+# Data transform was given
 transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.2980, 0.2962, 0.2987],
@@ -52,7 +37,7 @@ def attack(dataset, rounds, device='cuda'):
             selected_indices = np.random.permutation(1000)
         else:
             
-            # every 5 rounds instead retrain on the full dataset to prevent "forget", else only train on the newly added ones
+            # Every 5 rounds instead retrain on the full dataset to prevent "forget", else only train on the newly added ones
             if i % 5 == 0:
                 loader = DataLoader(training_data, batch_size=128, shuffle=True)
             else:   
@@ -60,17 +45,17 @@ def attack(dataset, rounds, device='cuda'):
 
             if len(dataset) - len(used_indices) < 1000:
                loader = DataLoader(training_data, batch_size=128, shuffle=True)
-               surrogate_model  = train(surrogate_model, loader,70, i)
+               surrogate_model  = train(surrogate_model, loader,50, i)
                
                break
             
-            # We train for 25 epochs
-            surrogate_model  = train(surrogate_model, loader,30, i)
+            surrogate_model  = train(surrogate_model, loader,20, i)
             
             # Perform MC-Dropout to get the new indices we want to query
             selected_indices = predict_next(surrogate_model, dataset, used_indices=used_indices,samples=15)
             used_indices.extend(selected_indices.tolist())
-            
+        
+        
         # We then augment and send them to the api to encode
         images = [augment_image_single(dataset.imgs[idx]) for idx in selected_indices]  
         embeddings = model_stealing(images, port=PORT, TOKEN=TOKEN)  
@@ -85,10 +70,10 @@ def attack(dataset, rounds, device='cuda'):
         training_data.extend(images,embeddings)
 
 
-# load the dataset
+# Load the dataset
 dataset = torch.load("data/ModelStealingPub.pt",weights_only=False)
 
-# change the labels to be 0,1,2,...,n
+# Change the labels to be 0,1,2,...,n
 original_labels = np.array(dataset.labels)
 unique_labels = np.unique(original_labels)
 label_mapping = {old_label: new_label for new_label, old_label in enumerate(unique_labels, start=0)}
@@ -104,8 +89,7 @@ PORT = "9817"
 
 # print(embeddings_sim(dataset))
 
-#new_api(TOKEN)#  # 00:35 -> 04:35
+#new_api(TOKEN)
 attack(dataset, rounds=400)  
-# upload("model_out/surrogate_model12.pth") #16:32 -> 17:32
+# upload("model_out/surrogate_model11.pth",TOKEN,SEED) 
 
- # dont know anymore, maybe ensemble or other model,  better general , more data, look at space occupied 

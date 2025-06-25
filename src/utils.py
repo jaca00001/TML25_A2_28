@@ -10,8 +10,6 @@ from tqdm import tqdm
 import kornia.augmentation as K
 
 
-
-
 # Augmentations specified for the images
 AUGMENT = nn.Sequential(
     K.RandomHorizontalFlip(p=0.5),
@@ -27,7 +25,7 @@ to_tensor = transforms.ToTensor()
 to_pil = transforms.ToPILImage()
 
 
-# One for Batch one for sinlge images
+# One for Batch one for single images
 def augment_image(images):
     return AUGMENT(images)
 
@@ -40,6 +38,8 @@ def augment_image_single(image):
 
 # Use MC-Droput to estimate the std of each emebedding
 def bayesian_predictions(model, X, estimators=10, device='cuda'):
+    
+    # The train in the evaluation setting is intended as it enables random behaviour, which is needed for the uncertanty computation
     model.train()
 
     with torch.no_grad():
@@ -54,7 +54,8 @@ def bayesian_predictions(model, X, estimators=10, device='cuda'):
     return std
 
 
-def predict_next(model, dataset, samples=20, k=4000, subset_ratio=0.4, used_indices=None):
+# Predict the next 1000 samples, can reduce size we consider for speed
+def predict_next(model, dataset, samples=20, k=4000, subset_ratio=0.7, used_indices=None):
     # Determine unused indices to prevent duplicates
     all_indices = set(range(len(dataset)))
     used_indices = set(used_indices) if used_indices is not None else set()
@@ -123,28 +124,30 @@ def train(model, loader, epochs, round):
         total_loss = 0
         count = 0
 
-        # weights for balancing the loss functions
+        # Weights for balancing the loss functions
         alpha = (epoch / epochs) * 0.5
 
         for imgs, embeddings in loader:
             imgs, embeddings = imgs.cuda(), embeddings.cuda()
             
-            # augment images, stolen embedding used a different augmentation
+            # Augment images, stolen embedding used a different augmentation
             view_1 = augment_image(imgs).cuda()
-            
+            view_2 = augment_image(imgs).cuda()
            
-
             pred_embeddings_1 = model(view_1)
-      
+            pred_embeddings_2 = model(view_2)
 
+            # Embeddings should be close to the victim and other augmentations of the same image
             mse_loss = criterion(pred_embeddings_1, embeddings)
             cos_loss = F.cosine_embedding_loss(pred_embeddings_1, embeddings, torch.ones(pred_embeddings_1.size(0)).cuda())
+            cos_loss_2 = F.cosine_embedding_loss(pred_embeddings_1, pred_embeddings_2, torch.ones(pred_embeddings_1.size(0)).cuda())
          
             # At the start only use mse, if the model has learned slowly introduce the other two as well
             weighted_mse = (1 - alpha) * mse_loss
             weighted_cos = alpha * cos_loss
+            weighted_cos_2 = alpha/2 * cos_loss_2
           
-            loss = weighted_mse + weighted_cos 
+            loss = weighted_mse + weighted_cos + weighted_cos_2
 
             optimizer.zero_grad()
             loss.backward()
