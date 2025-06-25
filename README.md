@@ -67,11 +67,11 @@ attack.py - Main code for the model stealing
             attack: runs the attack for n rounds, each round sending 1000 new images to the api. Returns the stolen model at the end
 
 
-api.py - Handles all the code which interacts with the api 
-        new_api: Requests a new api/model. Returns TOKEN and SEED. 
-        model_stealing: Sends 1000 images to the api. Returns the embeddings. 
-        upload: Uploads the current stolen model for evaluation. Returns L2 distance to orignial model. 
-        embeddings_sim: Meassures the cosine similarity between 2 different subsets. Returns the average cosine similarity. 
+api.py - Handles all the code which interacts with the api.  
+        new_api: Requests a new api/model. Returns TOKEN and SEED.   
+        model_stealing: Sends 1000 images to the api. Returns the embeddings.  
+        upload: Uploads the current stolen model for evaluation. Returns L2 distance to orignial model.   
+        embeddings_sim: Meassures the cosine similarity between 2 different subsets. Returns the average cosine similarity.  
 
 
 utils.py - This file includes different functions required to steal the model. 
