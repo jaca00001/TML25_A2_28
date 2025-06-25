@@ -78,15 +78,12 @@ label_mapping = {old_label: new_label for new_label, old_label in enumerate(uniq
 new_labels = np.array([label_mapping[label] for label in original_labels])
 dataset.labels = new_labels.tolist()
 
-
 TOKEN = "08392413"
 SEED = "40069910"
 PORT = "9817"
-
 
 # Code to request a new api, attack and upload the model
 
 # new_api(TOKEN)
 # attack(dataset, rounds=400)  
 upload("model_out/surrogate_model9.pth",TOKEN,SEED) 
-
